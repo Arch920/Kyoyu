@@ -52,7 +52,7 @@ Now let us start the setup for SQUID proxy server on AWS. Make sure you have cre
     b.	export http_proxy=private_ip of public_instance:3128
     c.	export https_proxy=private_ip of public_instance:3128
   26.	Again try curl -v https://google.com → There should be a response this time
-  27.	From this setup you can easily download any packages/ resources in the Private instance using the Squid Public proxy. 
+  27.	From this setup you can easily download any packages/ resources in the Private instance using the Squid Public proxy
   28.	This also eliminates the need of NAT Gateway. 
 
 Note: Each time you ssh into private ec2, you need to run the 2 export commands. 
