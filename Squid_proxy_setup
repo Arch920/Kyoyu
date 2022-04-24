@@ -1,0 +1,60 @@
+This page will show you how to setup SQUID proxy server using AWS EC2. Before we start the actual steps for setup, a brief intro to proxy servers. 
+  •	A proxy server is a system or router that provides a gateway between users and the internet. Therefore, it helps prevent cyber attackers from entering a private    network.
+  •	Proxies provide a valuable layer of security for your computer. They can be set up as web filters or firewalls, protecting your computer from internet threats like malware.
+  •	Some people use proxies for personal purposes, such as hiding their location while watching movies online.
+  •	For an organization, however, they can be used to accomplish several key tasks such as:
+    o	Improve security
+    o	Secure employees’ internet activity from people trying to snoop on them
+    o	Control the websites employees and staff access in the office
+  •	Because a proxy server has its own IP address, it acts as a go-between for a computer and the internet. Your computer knows this address, and when you send a request on the internet, it is routed to the proxy, which then gets the response from the web server and forwards the data from the page to your computer’s browser.
+  •	More details on proxy can be found on this page.
+
+Now let us start the setup for SQUID proxy server on AWS. Make sure you have created your AWS account & verified it. 
+  1.	Select the region where you want to setup the proxy server. 
+  2.	Create a new VPC say SQUID_VPC & assign it the CIDR of 192.168.0.0/16
+  3.	Create a new Internet Gateway & attach it to the SQUID_VPC
+  4.	Create a Public subnet with CIDR 192.168.0.0/24 in one of the AZs → allow auto assign IPv4
+  5.	Create a Private subnet with CIDR 192.168.1.0/24 in an AZ different than Public
+  6.	Create a new Route table for Public subnet → add Internet Gateway that we created in step 3 in route → associate Public subnet. 
+  7.	Create a new Route table for Private subnet → associate Private subnet.
+  8.	Create a Public SG → in Inbound allow SSH My IP, Port 3128 needed for Squid from 0.0.0.0/0, ports 80 & 443 from 0.0.0.0/0
+  9.	Create a Private SG → in Inbound allow SSH & choose Public SG as source
+  10.	Go to EC2 console & launch an instance in Public subnet → attach Public SG that you created → Give name as Squid_Proxy_EC2 → create instance. 
+  11.	Launch a Private EC2 instance in Private subnet → attach Private SG → give name as Private → create instance.  
+  12.	Go back to Private route table → in routes add 0.0.0.0/0 → select Instance → choose instance ID of public instance → save
+  13.	Once the public instance is running, SSH into it → run ‘sudo yum update -y’ 
+  14.	Install Squid proxy – 
+    a.	Run command sudo yum install -y squid
+    b.	sudo systemctl start squid → to check start squid
+    c.	systemctl status squid → to check status of squid
+    d.	sudo nano /etc/squid/squid.conf → opens .conf file of squid. Need to add a simple line here
+    e.	add http_access allow all
+    f.	comment (#) http_access deny all → eg: #http_access deny all
+    g.	Save & exit 
+    h.	Run command sudo systemctl restart squid. 
+  15.	Now create a key file needed to ssh into Private instance. 
+  16.	Run sudo nano keyfile_name.pem → copy contents of pem file into editor → save. 
+  17.	Run command sudo chmod 400 keyfile_name.pem
+  18.	Now before we connect to Private instance, we need to make few changes in the SGs. 
+  19.	Open Public SG → in Inbound add port 3128 & choose source as Private IP of Private instance. Don’t remove/ replace previously added port 3128 rule. 
+  20.	Next, open the Outbound rules of Public SG → add – 
+    a.	All traffic 0.0.0.0/0
+    b.	HTTP & HTTPS 0.0.0.0/0
+    c.	Again HTTP & HTTPs to Private instance’s private IP. 
+  21.	Now open Private SG → in Inbound add HTTP, HTTPS & port 3128 from Private IP of Public instance. 
+  22.	In the Outbound rules for Private SG –
+    a.	Remove All traffic if it’s there
+    b.	Add HTTP, HTTPS & port 3128 to Private IP of Public instance. 
+  23.	Once all the changes of SG are saved, ssh to Private instance from the Public instance. 
+  24.	Try to run sudo curl -v https://google.com → There should be no response 
+  25.	Now run following commands – 
+    a.	sudo su
+    b.	export http_proxy=private_ip of public_instance:3128
+    c.	export https_proxy=private_ip of public_instance:3128
+  26.	Again try curl -v https://google.com → There should be a response this time
+  27.	From this setup you can easily download any packages/ resources in the Private instance using the Squid Public proxy. 
+  28.	This also eliminates the need of NAT Gateway. 
+
+Note: Each time you ssh into private ec2, you need to run the 2 export commands. 
+Hope this helps you in some way. In case there are any mistakes in the steps, do let me know so I can rectify those.  
+DropBox link for video.
