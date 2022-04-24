@@ -57,4 +57,4 @@ Now let us start the setup for SQUID proxy server on AWS. Make sure you have cre
 
 Note: Each time you ssh into private ec2, you need to run the 2 export commands. 
 Hope this helps you in some way. In case there are any mistakes in the steps, do let me know so I can rectify those.  
-DropBox link for video.
+DropBox link for video - https://www.dropbox.com/s/p3ljdv4m24tj77k/SQUID_Proxy_working_2022-04-24_160724.wmv?dl=0
